@@ -1,0 +1,10 @@
+# Generated files
+/out/
+/build/
+.idea/
+
+# macOS specific files
+.DS_Store
+
+# Maven
+/target/
