@@ -15,4 +15,9 @@ public class Category {
     private String description;
 
     public Category() {}
+
+    @Override
+    public String toString() {
+        return "Category {Name: " + name + ", Desc: " + description + "}";
+    }
 }

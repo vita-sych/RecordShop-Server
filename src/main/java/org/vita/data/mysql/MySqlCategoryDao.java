@@ -29,7 +29,7 @@ public class MySqlCategoryDao extends MySqlDaoBase implements CategoryDao
         ) {
             List<Category> categories = new ArrayList<>();
 
-            if (rs.next()) {
+            while (rs.next()) {
                 categories.add(Category.builder()
                         .categoryId(rs.getInt("category_id"))
                         .name(rs.getString("name"))

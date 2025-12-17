@@ -1,22 +1,17 @@
 package org.vita.models;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
+@Setter
+@Getter
 public class ShoppingCart
 {
     private Map<Integer, ShoppingCartItem> items = new HashMap<>();
-
-    public Map<Integer, ShoppingCartItem> getItems()
-    {
-        return items;
-    }
-
-    public void setItems(Map<Integer, ShoppingCartItem> items)
-    {
-        this.items = items;
-    }
 
     public boolean contains(int productId)
     {
@@ -33,14 +28,10 @@ public class ShoppingCart
         return items.get(productId);
     }
 
-    public BigDecimal getTotal()
-    {
-        BigDecimal total = items.values()
-                                .stream()
-                                .map(i -> i.getLineTotal())
-                                .reduce( BigDecimal.ZERO, (lineTotal, subTotal) -> subTotal.add(lineTotal));
-
-        return total;
+    public BigDecimal getTotal() {
+        return items.values()
+                    .stream()
+                    .map(ShoppingCartItem::getLineTotal)
+                    .reduce( BigDecimal.ZERO, (lineTotal, subTotal) -> subTotal.add(lineTotal));
     }
-
 }
