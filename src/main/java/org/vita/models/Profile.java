@@ -9,8 +9,7 @@ import lombok.Setter;
 @Getter
 @Builder
 @AllArgsConstructor
-public class Profile
-{
+public class Profile {
     private int userId;
     private String firstName = "";
     private String lastName = "";
@@ -21,7 +20,5 @@ public class Profile
     private String state = "";
     private String zip = "";
 
-    public Profile()
-    {
-    }
+    public Profile() {}
 }
