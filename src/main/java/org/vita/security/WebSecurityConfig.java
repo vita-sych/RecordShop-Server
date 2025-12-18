@@ -1,77 +1,86 @@
 package org.vita.security;
 
-import org.vita.security.jwt.JWTConfigurer;
-import org.vita.security.jwt.TokenProvider;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpMethod;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.vita.security.jwt.JWTConfigurer;
+import org.vita.security.jwt.TokenProvider;
 
+@Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+public class WebSecurityConfig {
 
     private final TokenProvider tokenProvider;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
-    private final UserModelDetailsService userModelDetailsService;
 
     public WebSecurityConfig(
             TokenProvider tokenProvider,
             JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
-            JwtAccessDeniedHandler jwtAccessDeniedHandler,
-            UserModelDetailsService userModelDetailsService
+            JwtAccessDeniedHandler jwtAccessDeniedHandler
     ) {
         this.tokenProvider = tokenProvider;
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
         this.jwtAccessDeniedHandler = jwtAccessDeniedHandler;
-        this.userModelDetailsService = userModelDetailsService;
     }
 
+    // 🔐 Password encoder
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * Configure paths and requests that should be ignored by Spring Security
-     * @param web
-     */
-    public void configure(WebSecurity web) {
-        web.ignoring().antMatchers(HttpMethod.OPTIONS, "/**");
-    }
+    // 🛡️ Security filter chain
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-    /**
-     * Configure security settings
-     * @param httpSecurity
-     * @throws Exception
-     */
-    @Override
-    protected void configure(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity
-                // we don't need CSRF because our token is invulnerable
-                .csrf().disable()
+        http
+                // enable CORS
+                .cors(Customizer.withDefaults())
 
-                .exceptionHandling()
-                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                .accessDeniedHandler(jwtAccessDeniedHandler)
+                // disable CSRF (JWT-based API)
+                .csrf(AbstractHttpConfigurer::disable)
 
-                // create no session
-                .and()
-                .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                // exception handling
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .accessDeniedHandler(jwtAccessDeniedHandler)
+                )
 
-                .and()
-                .apply(securityConfigurerAdapter());
-    }
-    private JWTConfigurer securityConfigurerAdapter() {
-        return new JWTConfigurer(tokenProvider);
+                // stateless session
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                // authorization rules
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(new AntPathRequestMatcher("/login", "POST")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/register", "POST")).permitAll()
+
+                        .requestMatchers(new AntPathRequestMatcher("/products/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/categories/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/cart/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/profile/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/orders/**")).permitAll()
+
+                        .requestMatchers(new AntPathRequestMatcher("/**", "OPTIONS")).permitAll()
+
+                        .anyRequest().authenticated()
+                )
+
+                // JWT filter
+                .apply(new JWTConfigurer(tokenProvider));
+
+        return http.build();
     }
 }
-

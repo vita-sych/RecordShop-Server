@@ -24,7 +24,6 @@ import org.vita.security.jwt.JWTFilter;
 import org.vita.security.jwt.TokenProvider;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:52330", allowCredentials = "true")
 @PreAuthorize("permitAll()")
 public class AuthenticationController {
 

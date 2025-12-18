@@ -2,17 +2,16 @@ package org.vita.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
-import org.vita.data.ProductDao;
 import org.vita.data.ShoppingCartDao;
 import org.vita.data.UserDao;
 import org.vita.models.ShoppingCart;
@@ -21,102 +20,90 @@ import org.vita.models.User;
 
 import java.security.Principal;
 
-// convert this class to a REST controller
-// only logged in users should have access to these actions
 @RestController
-@CrossOrigin(origins = "http://localhost:52330", allowCredentials = "true")
-@PreAuthorize("permitAll()")
+@RequestMapping("/cart")
+@PreAuthorize("isAuthenticated()")
 public class ShoppingCartController {
-    // a shopping cart requires
-    private ShoppingCartDao shoppingCartDao;
-    private UserDao userDao;
-    private ProductDao productDao;
+    private final ShoppingCartDao shoppingCartDao;
+    private final UserDao userDao;
 
     @Autowired
-    public ShoppingCartController(ShoppingCartDao shoppingCartDao, UserDao userDao, ProductDao productDao) {
+    public ShoppingCartController(ShoppingCartDao shoppingCartDao, UserDao userDao) {
         this.shoppingCartDao = shoppingCartDao;
         this.userDao = userDao;
-        this.productDao = productDao;
     }
 
-    // each method in this controller requires a Principal object as a parameter
-    @GetMapping("/cart")
-    public ShoppingCart getCart(Principal principal) {
+    @GetMapping
+    public ResponseEntity<ShoppingCart> getCart(Principal principal) {
         try {
-            // get the currently logged in username
-            String userName = principal.getName();
-            // find database user by userId
-            User user = userDao.getByUserName(userName);
-            int userId = user.getId();
+            User user = userDao.getByUserName(principal.getName());
+            ShoppingCart cart = shoppingCartDao.getByUserId(user.getId());
 
-            // use the shoppingcartDao to get all items in the cart and return the cart
-            return shoppingCartDao.getByUserId(userId);
-        }
-        catch(Exception e) {
+            if (cart == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok(cart);
+        } catch (Exception e) {
             e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // add a POST method to add a product to the cart - the url should be
-    // https://localhost:8080/cart/products/15 (15 is the productId to be added
-    @PostMapping("/cart/products/{id}")
-    public ShoppingCart addProduct(@PathVariable int id, Principal principal) {
+    @PostMapping("/products/{productId}")
+    public ResponseEntity<ShoppingCart> addProduct(@PathVariable int productId, Principal principal) {
         try {
-            // get the currently logged in username
-            String userName = principal.getName();
-            // find database user by userId
-            User user = userDao.getByUserName(userName);
-            int userId = user.getId();
-
-            // use the shoppingcartDao to get all items in the cart and return the cart
-            shoppingCartDao.addProduct(userId, id);
-            return shoppingCartDao.getByUserId(userId);
-        }
-        catch(Exception e) {
+            User user = userDao.getByUserName(principal.getName());
+            shoppingCartDao.addProduct(user.getId(), productId);
+            ShoppingCart cart = shoppingCartDao.getByUserId(user.getId());
+            return ResponseEntity.ok(cart);
+        } catch (Exception e) {
             e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // add a PUT method to update an existing product in the cart - the url should be
-    // https://localhost:8080/cart/products/15 (15 is the productId to be updated)
-    // the BODY should be a ShoppingCartItem - quantity is the only value that will be updated
-    @PutMapping("/cart/products/{id}")
-    public ShoppingCart updateProductQuantity(@PathVariable int id, Principal principal, @RequestBody ShoppingCartItem item) {
+    @PutMapping("/products/{productId}")
+    public ResponseEntity<ShoppingCart> updateProductQuantity(
+            @PathVariable int productId,
+            Principal principal,
+            @RequestBody ShoppingCartItem item
+    ) {
         if (item.getQuantity() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be greater than 0");
+            return ResponseEntity.badRequest().build();
         }
 
-        String userName = principal.getName();
-        User user = userDao.getByUserName(userName);
-        boolean updated = shoppingCartDao.updateProductQuantity(user.getId(), id, item.getQuantity());
+        try {
+            User user = userDao.getByUserName(principal.getName());
+            boolean updated = shoppingCartDao.updateProductQuantity(user.getId(), productId, item.getQuantity());
 
-        if (!updated) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found in cart");
+            if (!updated) {
+                return ResponseEntity.notFound().build();
+            }
+
+            ShoppingCart cart = shoppingCartDao.getByUserId(user.getId());
+            return ResponseEntity.ok(cart);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-
-        return shoppingCartDao.getByUserId(user.getId());
     }
 
-
-    // add a DELETE method to clear all products from the current users cart
-    // https://localhost:8080/cart
-    @DeleteMapping("/cart")
-    public void deleteProduct(Principal principal) {
+    @DeleteMapping
+    public ResponseEntity<Void> clearCart(Principal principal) {
         try {
-            String userName = principal.getName();
-            User user = userDao.getByUserName(userName);
-            int userId = user.getId();
-            ShoppingCart cart = shoppingCartDao.getByUserId(userId);
+            User user = userDao.getByUserName(principal.getName());
+            ShoppingCart cart = shoppingCartDao.getByUserId(user.getId());
 
-            if(cart == null)
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            if (cart == null) {
+                return ResponseEntity.notFound().build();
+            }
 
-            shoppingCartDao.delete(userId);
-        }
-        catch(Exception ex) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad.");
+            shoppingCartDao.delete(user.getId());
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }
