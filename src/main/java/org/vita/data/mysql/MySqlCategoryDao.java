@@ -36,9 +36,6 @@ public class MySqlCategoryDao extends MySqlDaoBase implements CategoryDao
                         .description(rs.getString("description"))
                         .build());
             }
-
-            System.out.println(categories);
-
             return categories;
         } catch (SQLException e) {
             throw new RuntimeException(e);
