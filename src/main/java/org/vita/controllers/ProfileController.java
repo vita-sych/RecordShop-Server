@@ -3,41 +3,31 @@ package org.vita.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.vita.data.ProfileDao;
-import org.vita.data.UserDao;
 import org.vita.models.Profile;
-import org.vita.models.User;
+import org.vita.services.ProfileService;
 
 @RestController
 @RequestMapping("/profile")
 public class ProfileController {
 
-    private final UserDao userDao;
-    private final ProfileDao profileDao;
+    private final ProfileService profileService;
 
     @Autowired
-    public ProfileController(UserDao userDao, ProfileDao profileDao) {
-        this.userDao = userDao;
-        this.profileDao = profileDao;
+    public ProfileController(ProfileService profileService) {
+        this.profileService = profileService;
     }
 
     @GetMapping
     public ResponseEntity<Profile> getProfile() {
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            User user = userDao.getByUserName(authentication.getName());
-            Profile profile = profileDao.getByUserId(user.getId());
+            Profile profile = profileService.getProfile();
 
-            if (profile == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
+            if (profile == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
             return ResponseEntity.ok(profile);
         } catch (Exception e) {
@@ -49,15 +39,9 @@ public class ProfileController {
     @PutMapping
     public ResponseEntity<Profile> updateProfile(@RequestBody Profile profile) {
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            User user = userDao.getByUserName(authentication.getName());
-            profile.setUserId(user.getId());
+            Profile updatedProfile = profileService.updateProfile(profile);
 
-            Profile updatedProfile = profileDao.update(profile);
-
-            if (updatedProfile == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
+            if (updatedProfile == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
             return ResponseEntity.ok(updatedProfile);
         } catch (Exception e) {

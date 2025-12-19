@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.vita.models.Product;
-import org.vita.data.ProductDao;
+import org.vita.services.ProductsService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -23,11 +23,11 @@ import java.util.List;
 @RequestMapping("/products")
 public class ProductsController {
 
-    private final ProductDao productDao;
+    private final ProductsService productsService;
 
     @Autowired
-    public ProductsController(ProductDao productDao) {
-        this.productDao = productDao;
+    public ProductsController(ProductsService productsService) {
+        this.productsService = productsService;
     }
 
     @GetMapping
@@ -41,7 +41,7 @@ public class ProductsController {
             @RequestParam(name = "order", required = false) String order
     ) {
         try {
-            List<Product> products = productDao.search(categoryId, minPrice, maxPrice, subCategory, name, order);
+            List<Product> products = productsService.searchProducts(categoryId, minPrice, maxPrice, subCategory, name, order);
             return ResponseEntity.ok(products);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -53,10 +53,10 @@ public class ProductsController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<Product> getById(@PathVariable int id) {
         try {
-            Product product = productDao.getById(id);
-            if (product == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
+            Product product = productsService.getProductById(id);
+
+            if (product == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
             return ResponseEntity.ok(product);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -68,7 +68,7 @@ public class ProductsController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<Product> addProduct(@RequestBody Product product) {
         try {
-            Product created = productDao.create(product);
+            Product created = productsService.addProduct(product);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -80,11 +80,10 @@ public class ProductsController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<Void> updateProduct(@PathVariable int id, @RequestBody Product product) {
         try {
-            Product existing = productDao.getById(id);
-            if (existing == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
-            productDao.update(id, product);
+            boolean updated = productsService.updateProduct(id, product);
+
+            if (!updated) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
             return ResponseEntity.noContent().build();
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -96,11 +95,10 @@ public class ProductsController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<Void> deleteProduct(@PathVariable int id) {
         try {
-            Product existing = productDao.getById(id);
-            if (existing == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
-            productDao.delete(id);
+            boolean deleted = productsService.deleteProduct(id);
+
+            if (!deleted) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
             return ResponseEntity.noContent().build();
         } catch (Exception ex) {
             ex.printStackTrace();

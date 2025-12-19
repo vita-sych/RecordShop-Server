@@ -12,10 +12,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.vita.data.CategoryDao;
-import org.vita.data.ProductDao;
 import org.vita.models.Category;
 import org.vita.models.Product;
+import org.vita.services.CategoriesService;
 
 import java.util.List;
 
@@ -23,34 +22,30 @@ import java.util.List;
 @RequestMapping("/categories")
 public class CategoriesController {
 
-    private final CategoryDao categoryDao;
-    private final ProductDao productDao;
+    private final CategoriesService categoriesService;
 
     @Autowired
-    public CategoriesController(CategoryDao categoryDao, ProductDao productDao) {
-        this.categoryDao = categoryDao;
-        this.productDao = productDao;
+    public CategoriesController(CategoriesService categoriesService) {
+        this.categoriesService = categoriesService;
     }
 
-    // GET /categories
     @GetMapping
     public ResponseEntity<List<Category>> getAll() {
         try {
-            return ResponseEntity.ok(categoryDao.getAllCategories());
+            return ResponseEntity.ok(categoriesService.getAllCategories());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // GET /categories/{id}
     @GetMapping("/{id}")
     public ResponseEntity<Category> getById(@PathVariable int id) {
         try {
-            Category category = categoryDao.getById(id);
-            if (category == null) {
-                return ResponseEntity.notFound().build();
-            }
+            Category category = categoriesService.getCategoryById(id);
+
+            if (category == null) return ResponseEntity.notFound().build();
+
             return ResponseEntity.ok(category);
         } catch (Exception e) {
             e.printStackTrace();
@@ -58,67 +53,53 @@ public class CategoriesController {
         }
     }
 
-    // GET /categories/{id}/products
     @GetMapping("/{id}/products")
     public ResponseEntity<List<Product>> getProductsById(@PathVariable int id) {
         try {
-            return ResponseEntity.ok(productDao.listByCategoryId(id));
+            return ResponseEntity.ok(categoriesService.getProductsByCategoryId(id));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // POST /categories (ADMIN only)
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Category> addCategory(@RequestBody Category category) {
         try {
-            Category created = categoryDao.create(category);
-            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+            return ResponseEntity.status(HttpStatus.CREATED).body(categoriesService.addCategory(category));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // PUT /categories/{id} (ADMIN only)
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Category> updateCategory(
             @PathVariable int id,
             @RequestBody Category category) {
-
         try {
-            Category existing = categoryDao.getById(id);
-            if (existing == null) {
-                return ResponseEntity.notFound().build();
-            }
+            Category updated = categoriesService.updateCategory(id, category);
 
-            category.setCategoryId(id);
-            categoryDao.update(id, category);
+            if (updated == null) return ResponseEntity.notFound().build();
 
-            return ResponseEntity.ok(categoryDao.getById(id));
-
+            return ResponseEntity.ok(updated);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // DELETE /categories/{id} (ADMIN only)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteCategory(@PathVariable int id) {
         try {
-            Category existing = categoryDao.getById(id);
-            if (existing == null) {
-                return ResponseEntity.notFound().build();
-            }
+            boolean deleted = categoriesService.deleteCategory(id);
 
-            categoryDao.delete(id);
+            if (!deleted) return ResponseEntity.notFound().build();
+
             return ResponseEntity.noContent().build();
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

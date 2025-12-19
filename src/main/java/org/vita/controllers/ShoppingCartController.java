@@ -11,12 +11,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.vita.data.ShoppingCartDao;
-import org.vita.data.UserDao;
 import org.vita.models.ShoppingCart;
 import org.vita.models.ShoppingCartItem;
-import org.vita.models.User;
+import org.vita.services.ShoppingCartService;
 
 import java.security.Principal;
 
@@ -24,24 +23,20 @@ import java.security.Principal;
 @RequestMapping("/cart")
 @PreAuthorize("isAuthenticated()")
 public class ShoppingCartController {
-    private final ShoppingCartDao shoppingCartDao;
-    private final UserDao userDao;
+
+    private final ShoppingCartService shoppingCartService;
 
     @Autowired
-    public ShoppingCartController(ShoppingCartDao shoppingCartDao, UserDao userDao) {
-        this.shoppingCartDao = shoppingCartDao;
-        this.userDao = userDao;
+    public ShoppingCartController(ShoppingCartService shoppingCartService) {
+        this.shoppingCartService = shoppingCartService;
     }
 
     @GetMapping
     public ResponseEntity<ShoppingCart> getCart(Principal principal) {
         try {
-            User user = userDao.getByUserName(principal.getName());
-            ShoppingCart cart = shoppingCartDao.getByUserId(user.getId());
+            ShoppingCart cart = shoppingCartService.getCart(principal.getName());
 
-            if (cart == null) {
-                return ResponseEntity.notFound().build();
-            }
+            if (cart == null) return ResponseEntity.notFound().build();
 
             return ResponseEntity.ok(cart);
         } catch (Exception e) {
@@ -53,9 +48,7 @@ public class ShoppingCartController {
     @PostMapping("/products/{productId}")
     public ResponseEntity<ShoppingCart> addProduct(@PathVariable int productId, Principal principal) {
         try {
-            User user = userDao.getByUserName(principal.getName());
-            shoppingCartDao.addProduct(user.getId(), productId);
-            ShoppingCart cart = shoppingCartDao.getByUserId(user.getId());
+            ShoppingCart cart = shoppingCartService.addProduct(principal.getName(), productId);
             return ResponseEntity.ok(cart);
         } catch (Exception e) {
             e.printStackTrace();
@@ -69,19 +62,12 @@ public class ShoppingCartController {
             Principal principal,
             @RequestBody ShoppingCartItem item
     ) {
-        if (item.getQuantity() <= 0) {
-            return ResponseEntity.badRequest().build();
-        }
-
+        if (item.getQuantity() <= 0) return ResponseEntity.badRequest().build();
         try {
-            User user = userDao.getByUserName(principal.getName());
-            boolean updated = shoppingCartDao.updateProductQuantity(user.getId(), productId, item.getQuantity());
+            ShoppingCart cart = shoppingCartService.updateProductQuantity(principal.getName(), productId, item.getQuantity());
 
-            if (!updated) {
-                return ResponseEntity.notFound().build();
-            }
+            if (cart == null) return ResponseEntity.notFound().build();
 
-            ShoppingCart cart = shoppingCartDao.getByUserId(user.getId());
             return ResponseEntity.ok(cart);
         } catch (Exception e) {
             e.printStackTrace();
@@ -92,34 +78,24 @@ public class ShoppingCartController {
     @DeleteMapping("/products/{productId}")
     public ResponseEntity<ShoppingCart> removeProduct(@PathVariable int productId, Principal principal) {
         try {
-            String userName = principal.getName();
-            User user = userDao.getByUserName(userName);
+            ShoppingCart cart = shoppingCartService.removeProduct(principal.getName(), productId);
 
-            boolean removed = shoppingCartDao.removeProduct(user.getId(), productId);
+            if (cart == null) return ResponseEntity.notFound().build();
 
-            if (!removed) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
-
-            return ResponseEntity.ok(shoppingCartDao.getByUserId(user.getId()));
+            return ResponseEntity.ok(cart);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-
     }
 
     @DeleteMapping
     public ResponseEntity<Void> clearCart(Principal principal) {
         try {
-            User user = userDao.getByUserName(principal.getName());
-            ShoppingCart cart = shoppingCartDao.getByUserId(user.getId());
+            boolean cleared = shoppingCartService.clearCart(principal.getName());
 
-            if (cart == null) {
-                return ResponseEntity.notFound().build();
-            }
+            if (!cleared) return ResponseEntity.notFound().build();
 
-            shoppingCartDao.delete(user.getId());
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             e.printStackTrace();
