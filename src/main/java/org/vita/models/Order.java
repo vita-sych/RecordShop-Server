@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Setter
 @Getter
@@ -18,6 +19,8 @@ public class Order {
     private String state = "";
     private String zip = "";
     private int shipping_amount;
+    private List<OrderItem> items;
+    private double total;
 
     public Order() {}
 }

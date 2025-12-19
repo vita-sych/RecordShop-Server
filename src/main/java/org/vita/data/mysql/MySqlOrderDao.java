@@ -10,6 +10,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class MySqlOrderDao extends MySqlDaoBase implements OrderDao {
@@ -47,4 +50,37 @@ public class MySqlOrderDao extends MySqlDaoBase implements OrderDao {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public List<Order> getByUserId(int userId) {
+        List<Order> orders = new ArrayList<>();
+
+        try (Connection connection = getConnection();
+             PreparedStatement ps = connection.prepareStatement("SELECT * FROM orders WHERE user_id = ? ORDER BY date DESC")) {
+
+            ps.setInt(1, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Order order = new Order();
+                    order.setOrderId(rs.getInt("order_id"));
+                    order.setUserId(rs.getInt("user_id"));
+                    order.setDate(LocalDate.parse(rs.getString("date"), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    order.setAddress(rs.getString("address"));
+                    order.setCity(rs.getString("city"));
+                    order.setState(rs.getString("state"));
+                    order.setZip(rs.getString("zip"));
+                    order.setShipping_amount(rs.getInt("shipping_amount"));
+
+                    orders.add(order);
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return orders;
+    }
+
 }
