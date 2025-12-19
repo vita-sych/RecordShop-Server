@@ -86,34 +86,31 @@ The application consists of two primary parts:
 - ⚙️ Cart Cleanup – Cart is cleared after successful checkout
 - ⚙️ Order Confirmation Data – Returned to the client after checkout
 
-**Receipt Example:**
-![Receipt_Example](./docs/receipt.png)
-
 ---
 ## 🔌 API Endpoints
 
-| Method        | Endpoint                     | Description                                                                             |
-| ------------- | ---------------------------- | --------------------------------------------------------------------------------------- |
-| 🟡 **POST**   | `/login`                     | Authenticate user and return JWT token                                                  |
-| 🟡 **POST**   | `/register`                  | Register a new user                                                                     |
-| 🟢 **GET**    | `/profile`                   | Retrieve authenticated user's profile                                                   |
-| 🟡 **PUT**    | `/profile`                   | Update authenticated user's profile                                                     |
-| 🟢 **GET**    | `/categories`                | Retrieve all categories                                                                 |
-| 🟢 **GET**    | `/categories/{id}`           | Retrieve a category by ID                                                               |
-| 🟢 **GET**    | `/categories/{id}/products`  | Retrieve all products under a specific category                                         |
-| 🟡 **POST**   | `/categories`                | Add a new category (Admin only)                                                         |
-| 🟢 **GET**    | `/products`                  | Retrieve all products with optional filters (category, price, subcategory, name, order) |
-| 🟢 **GET**    | `/products/{id}`             | Retrieve a product by ID                                                                |
-| 🟡 **POST**   | `/products`                  | Add a new product (Admin only)                                                          |
-| 🟡 **PUT**    | `/products/{id}`             | Update a product (Admin only)                                                           |
-| 🔴 **DELETE** | `/products/{id}`             | Delete a product (Admin only)                                                           |
-| 🟢 **GET**    | `/cart`                      | Retrieve authenticated user's shopping cart                                             |
-| 🟡 **POST**   | `/cart/products/{productId}` | Add a product to the shopping cart                                                      |
-| 🟡 **PUT**    | `/cart/products/{productId}` | Update quantity of a product in the cart                                                |
-| 🔴 **DELETE** | `/cart/products/{productId}` | Remove a product from the cart                                                          |
-| 🔴 **DELETE** | `/cart`                      | Clear the shopping cart                                                                 |
-| 🟢 **GET**    | `/orders`                    | Retrieve authenticated user's orders                                                    |
-| 🟡 **POST**   | `/orders`                    | Create a new order from the shopping cart                                               |
+| Method          | Endpoint                     | Description                                                                             |
+|-----------------| ---------------------------- | --------------------------------------------------------------------------------------- |
+| 🟡 **POST**     | `/login`                     | Authenticate user and return JWT token                                                  |
+| 🟡 **POST**     | `/register`                  | Register a new user                                                                     |
+| 🟢 **GET**      | `/profile`                   | Retrieve authenticated user's profile                                                   |
+| 🟡 **PUT**      | `/profile`                   | Update authenticated user's profile                                                     |
+| 🟢 **GET**      | `/categories`                | Retrieve all categories                                                                 |
+| 🟢 **GET**      | `/categories/{id}`           | Retrieve a category by ID                                                               |
+| 🟢 **GET**      | `/categories/{id}/products`  | Retrieve all products under a specific category                                         |
+| 🟡 **POST**     | `/categories`                | Add a new category (Admin only)                                                         |
+| 🟢 **GET**      | `/products`                  | Retrieve all products with optional filters (category, price, subcategory, name, order) |
+| 🟢 **GET**      | `/products/{id}`             | Retrieve a product by ID                                                                |
+| 🟡 **POST**     | `/products`                  | Add a new product (Admin only)                                                          |
+| 🟡 **PUT**      | `/products/{id}`             | Update a product (Admin only)                                                           |
+| 🔴 **DELETE**   | `/products/{id}`             | Delete a product (Admin only)                                                           |
+| 🟢 **GET**      | `/cart`                      | Retrieve authenticated user's shopping cart                                             |
+| 🟡 **POST**     | `/cart/products/{productId}` | Add a product to the shopping cart                                                      |
+| 🟡 **PUT**      | `/cart/products/{productId}` | Update quantity of a product in the cart                                                |
+| 🔴 **DELETE**   | `/cart/products/{productId}` | Remove a product from the cart                                                          |
+| 🔴 **DELETE**   | `/cart`                      | Clear the shopping cart                                                                 |
+| 🟢 **GET**      | `/orders`                    | Retrieve authenticated user's orders                                                    |
+| 🟡 **POST**     | `/orders`                    | Create a new order from the shopping cart                                               |
 
 ---
 ## 📐 Project Architecture
