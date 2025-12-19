@@ -89,6 +89,26 @@ public class ShoppingCartController {
         }
     }
 
+    @DeleteMapping("/products/{productId}")
+    public ResponseEntity<ShoppingCart> removeProduct(@PathVariable int productId, Principal principal) {
+        try {
+            String userName = principal.getName();
+            User user = userDao.getByUserName(userName);
+
+            boolean removed = shoppingCartDao.removeProduct(user.getId(), productId);
+
+            if (!removed) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+
+            return ResponseEntity.ok(shoppingCartDao.getByUserId(user.getId()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+
+    }
+
     @DeleteMapping
     public ResponseEntity<Void> clearCart(Principal principal) {
         try {
