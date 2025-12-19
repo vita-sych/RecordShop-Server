@@ -2,12 +2,14 @@ package org.vita.data.mysql;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.vita.models.Product;
 
 import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@SpringBootTest
 class MySqlProductDaoTest extends BaseDaoTestClass
 {
     private MySqlProductDao dao;

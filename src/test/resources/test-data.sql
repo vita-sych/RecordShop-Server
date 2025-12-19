@@ -1,3 +1,8 @@
+DROP DATABASE IF EXISTS recordshop_test;
+
+CREATE DATABASE IF NOT EXISTS recordshop_test;
+
+USE recordshop_test;
 
 CREATE TABLE users (
                        user_id INT NOT NULL AUTO_INCREMENT,
