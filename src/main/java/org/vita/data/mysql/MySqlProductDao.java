@@ -11,28 +11,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class MySqlProductDao extends MySqlDaoBase implements ProductDao
-{
+public class MySqlProductDao extends MySqlDaoBase implements ProductDao {
     public MySqlProductDao(DataSource dataSource)
     {
         super(dataSource);
     }
 
     @Override
-    public List<Product> search(Integer categoryId, BigDecimal minPrice, BigDecimal maxPrice, String subCategory)
-    {
+    public List<Product> search(Integer categoryId, BigDecimal minPrice, BigDecimal maxPrice, String subCategory, String name, String order) {
         List<Product> products = new ArrayList<>();
+        String sortOrder = "ASC";
+
+        if ("desc".equalsIgnoreCase(order)) {
+            sortOrder = "DESC";
+        }
 
         String sql = "SELECT * FROM products " +
                 "WHERE (category_id = ? OR ? = -1) " +
                 "   AND (price >= ? OR ? = -1) " +
                 "   AND (price <= ? OR ? = -1) " +
-                "   AND (subcategory = ? OR ? = '') ";
+                "   AND (subcategory = ? OR ? = '') " +
+                "   AND (LOWER(name) LIKE ? OR ? = '') " +
+                "   ORDER BY price " + sortOrder;
 
         categoryId = categoryId == null ? -1 : categoryId;
         minPrice = minPrice == null ? new BigDecimal("-1") : minPrice;
         maxPrice = maxPrice == null ? new BigDecimal("-1") : maxPrice;
         subCategory = subCategory == null ? "" : subCategory;
+        name = name == null ? "" : name.toLowerCase();
 
         try (Connection connection = getConnection())
         {
@@ -45,6 +51,8 @@ public class MySqlProductDao extends MySqlDaoBase implements ProductDao
             statement.setBigDecimal(6, maxPrice);
             statement.setString(7, subCategory);
             statement.setString(8, subCategory);
+            statement.setString(9, "%" + name + "%");
+            statement.setString(10, name);
 
             ResultSet row = statement.executeQuery();
 

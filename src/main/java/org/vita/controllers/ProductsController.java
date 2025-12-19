@@ -36,10 +36,12 @@ public class ProductsController {
             @RequestParam(name="cat", required = false) Integer categoryId,
             @RequestParam(name="minPrice", required = false) BigDecimal minPrice,
             @RequestParam(name="maxPrice", required = false) BigDecimal maxPrice,
-            @RequestParam(name="subCategory", required = false) String subCategory
+            @RequestParam(name="subCategory", required = false) String subCategory,
+            @RequestParam(name="name", required = false) String name,
+            @RequestParam(name = "order", required = false) String order
     ) {
         try {
-            List<Product> products = productDao.search(categoryId, minPrice, maxPrice, subCategory);
+            List<Product> products = productDao.search(categoryId, minPrice, maxPrice, subCategory, name, order);
             return ResponseEntity.ok(products);
         } catch (Exception ex) {
             ex.printStackTrace();
